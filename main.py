@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit,\
     QPushButton, QMainWindow, QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, \
     QComboBox, QToolBar
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QIcon
 import sys
 import sqlite3
 
@@ -15,16 +15,17 @@ class MainWindow(QMainWindow):
         help_menu_item = self.menuBar().addMenu('&Help')
         edit_menu_item = self.menuBar().addMenu('&Edit')
 
-        add_student_action = QAction("Add Student", self)
+        add_student_action = QAction(
+            QIcon("icons/add.png"), "Add Student", self)
         add_student_action.triggered.connect(self.insert)
         file_menu_item.addAction(add_student_action)
 
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
 
-        edit_action = QAction('Search', self)
-        edit_action.triggered.connect(self.search_box)
-        edit_menu_item.addAction(edit_action)
+        search_action = QAction(QIcon('icons/search.png'), 'Search', self)
+        search_action.triggered.connect(self.search_box)
+        edit_menu_item.addAction(search_action)
 
         # main window
         self.table = QTableWidget()
@@ -34,9 +35,12 @@ class MainWindow(QMainWindow):
         self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
 
+        # creates toolbar and adds elements
         toolbar = QToolBar()
         toolbar.setMovable(True)
         self.addToolBar(toolbar)
+        toolbar.addAction(add_student_action)
+        toolbar.addAction(search_action)
 
     def load_data(self):
         connection = sqlite3.connect('database.db')
@@ -106,7 +110,7 @@ class InsertDialog(QDialog):
 class SearchBox(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Insert Student Data')
+        self.setWindowTitle('Search Students')
         self.setFixedHeight = self.setFixedWidth = 300
 
         layout = QVBoxLayout()

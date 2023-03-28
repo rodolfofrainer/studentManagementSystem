@@ -1,9 +1,18 @@
-from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit,\
+from PyQt6.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit,\
     QPushButton, QMainWindow, QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, \
     QComboBox, QToolBar, QStatusBar, QMessageBox
 from PyQt6.QtGui import QAction, QIcon
 import sys
 import sqlite3
+
+
+class DatabaseConnection:
+    def __init__(self, database_file='database.db'):
+        self.database_file = database_file
+
+    def connect(self):
+        connection = sqlite3.connect(self.database_file)
+        return connection
 
 
 class MainWindow(QMainWindow):
@@ -12,10 +21,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Student Management System')
         self.setMinimumSize(800, 600)
 
+        # creates items on menubar
         file_menu_item = self.menuBar().addMenu('&File')
         help_menu_item = self.menuBar().addMenu('&Help')
         edit_menu_item = self.menuBar().addMenu('&Edit')
 
+        # creates actions for items in menubar
         add_student_action = QAction(
             QIcon("icons/add.png"), "Add Student", self)
         add_student_action.triggered.connect(self.insert)
@@ -69,7 +80,7 @@ class MainWindow(QMainWindow):
         self.statusBar.addWidget(delete_button)
 
     def load_data(self):
-        connection = sqlite3.connect('database.db')
+        connection = DatabaseConnection().connect()
         result = connection.execute('SELECT * FROM students')
         self.table.setRowCount(0)
         for row_number, row_data in enumerate(result):
@@ -79,6 +90,7 @@ class MainWindow(QMainWindow):
                                    QTableWidgetItem(str(data)))
         connection.close()
 
+    # class methods
     def insert(self):
         dialog = InsertDialog()
         dialog.exec()
@@ -133,17 +145,23 @@ class InsertDialog(QDialog):
         self.setLayout(layout)
 
     def add_student(self):
+        # determines variables
         name = self.student_name.text()
         course = self.course_name.itemText(self.course_name.currentIndex())
         mobile = self.mobile.text()
-        connection = sqlite3.connect('database.db')
+        # creates connection with db
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
+        # Inserts entry into database
         cursor.execute(
             'INSERT INTO students (name, course, mobile) VALUES (?,?,?)', (name, course, mobile))
+        # commit and closes connections
         connection.commit()
         cursor.close()
         connection.close()
+        # close window
         self.close()
+        # reload data on mainpage
         main_window.load_data()
 
 
@@ -151,7 +169,6 @@ class SearchBox(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Search Students')
-        self.setFixedHeight = self.setFixedWidth = 300
 
         layout = QVBoxLayout()
 
@@ -212,8 +229,10 @@ class EditDialog(QDialog):
         self.setLayout(layout)
 
     def update_student(self):
-        connection = sqlite3.connect('database.db')
+        # create connection with database
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
+        # execute command to update entry
         cursor.execute(
             'UPDATE students SET name = ?, course = ?, mobile = ? WHERE id = ?', (
                 self.student_name.text(),
@@ -222,6 +241,7 @@ class EditDialog(QDialog):
                 self.student_id
             )
         )
+        # commit changes and close connections
         connection.commit()
         cursor.close()
         connection.close()
@@ -231,20 +251,24 @@ class EditDialog(QDialog):
 class DeleteDialog(QDialog):
     def __init__(self):
         super().__init__()
+        # creates window
         self.setWindowTitle('Delete Student Data')
 
         layout = QGridLayout()
-
+        # creates text and buttons
         confirmation = QLabel('Are you sure?')
         positive_confirmation = QPushButton('Yes')
         negative_confirmation = QPushButton('No')
 
+        # lay components out
         layout.addWidget(confirmation, 0, 0, 1, 2)
         layout.addWidget(positive_confirmation, 1, 0)
         layout.addWidget(negative_confirmation, 1, 1)
         self.setLayout(layout)
 
+        # runs logic behind buttons
         positive_confirmation.clicked.connect(self.delete_student)
+        negative_confirmation.clicked.connect(self.close)
 
     def delete_student(self):
         # get student record from DB
@@ -253,16 +277,21 @@ class DeleteDialog(QDialog):
         # get student id
         student_id = main_window.table.item(rowIndex, 0).text()
 
-        connection = sqlite3.connect('database.db')
+        # filter student and delete student
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute('DELETE from students WHERE id = ?', (student_id,))
+
+        # commit and closes connections
         connection.commit()
         cursor.close()
         connection.close()
         main_window.load_data()
 
+        # closes window
         self.close()
 
+        # creates window with confirmation
         confirmation_widget = QMessageBox()
         confirmation_widget.setWindowTitle('Success')
         confirmation_widget.setText('Deletion was successful')
@@ -270,6 +299,7 @@ class DeleteDialog(QDialog):
 
 
 class AboutDialog(QMessageBox):
+    # creates instance with text
     def __init__(self):
         super().__init__()
         self.setWindowTitle('About')
@@ -279,6 +309,7 @@ class AboutDialog(QMessageBox):
         self.setText(content)
 
 
+# main application
 app = QApplication(sys.argv)
 main_window = MainWindow()
 main_window.show()

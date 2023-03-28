@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit,\
     QPushButton, QMainWindow, QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, \
-    QComboBox
+    QComboBox, QToolBar
 from PyQt6.QtGui import QAction
 import sys
 import sqlite3
@@ -33,6 +33,10 @@ class MainWindow(QMainWindow):
             ('Id', 'Name', 'Course', 'Mobile'))
         self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
+
+        toolbar = QToolBar()
+        toolbar.setMovable(True)
+        self.addToolBar(toolbar)
 
     def load_data(self):
         connection = sqlite3.connect('database.db')
